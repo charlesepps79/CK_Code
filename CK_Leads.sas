@@ -21,9 +21,9 @@ LIBNAME MDRIVE '\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics';
 
 *** WEB REPORT MAIN DIRECTORY LOCATION --------------------------- ***;
 %LET TCI_LOC = 
-"\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics\DigITAl\CredIT KArmA\INput LEAD AND App Files\CK LEADs 20180517.xlsx";
+"\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics\DigITAl\CredIT KArmA\INput LEAD AND App Files\CK LEADs 20180522.xlsx";
 %LET APPFILE_LOC = 
-"\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics\DigITAl\CredIT KArmA\INput LEAD AND App Files\CredITKArmA518.xlsx";
+"\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics\DigITAl\CredIT KArmA\INput LEAD AND App Files\CredITKArmA523.xlsx";
 %LET CK_OUTPUT = 
 \\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics\DigITAl\CredIT KArmA\OUTput Result Files;
 %LET CK_SUMMARY = 
@@ -221,7 +221,7 @@ RUN;
 *** SEND THIS RESULTS FILE TO CREDIT KARMA EACH FRIDAY ----------- ***;
 PROC EXPORT 
 	DATA = LAST 
-	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_05182018.csv"
+	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_05232018.csv"
 	DBMS = CSV
 	REPLACE;
 RUN;
@@ -318,6 +318,6 @@ RUN;
 
 PROC EXPORT 
 	DATA = SUMMARY 
-	OUTFILE = "&CK_SUMMARY\CKRPT_05182018.xlsx" 
+	OUTFILE = "&CK_SUMMARY\CKRPT_05232018.xlsx" 
 	REPLACE ;
 RUN;

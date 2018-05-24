@@ -1,15 +1,15 @@
-*** M MORGAN 5/3/18                                                ***;  
-*** THIS PROGRAM MATCHES ANN'S CREDIT KARMA LEADS FILE WITH        ***;
+﻿*** M MORGAN 5/3/18                                                ***;  
+*** THIS PROGRAM MATCHES ANN'S Credit Karma LEADS FILE WITH        ***;
 *** BRIAN'S APPS FILE (WHICH IS LIMITED TO JUST APPS FOR THE SSN'S ***;
-*** ANN PROVIDES HIM), THEN PRODUCES A FILE WITH THE CREDIT KARMA  ***;
+*** ANN PROVIDES HIM), THEN PRODUCES A FILE WITH THE Credit Karma  ***;
 *** ID, LEAD INFO AND APP FLAGS. WILL BE RUN WEEKLY ON MONDAYS AND ***; 
-*** OUTPUT CSV SENT TO CREDIT KARMA IN EXACT LAYOUT AND FILE       ***;
+*** OUTPUT CSV SENT TO Credit Karma IN EXACT LAYOUT AND FILE       ***;
 *** NAMING CONVENTION. EMAIL THE CSV TO                            ***;
-*** PLOANREPORTING@CREDITKARMA.COM.  STILL NEED TO...              ***;
+*** PLOANREPORTING@CreditKarma.COM.  STILL NEED TO...              ***;
 *** - CREATE NAMING CONVENTION FOR INCOMING FILES (LEADS FILE AND  ***;
 *** APPS FILE).                                                    ***;
 *** - CREATE A MACRO FOR NAMING THE OUTPUT CSV FILE.               ***;
-*** CREDIT KARMA USES THIS FILE TO FINE TUNE THEIR LEAD TARGETING  ***;
+*** Credit Karma USES THIS FILE TO FINE TUNE THEIR LEAD TARGETING  ***;
 *** SO THEY CAN IDENTIFY THE LEADS WITH THE BEST CHANCE OF         ***;
 *** SUCCESS. ANY CHANGES MADE TO THIS CODE SHOULD ALSO BE MADE TO  ***;
 *** THE SAS CODE FOR OUR INTERNAL REPORT. ------------------------ ***;
@@ -17,17 +17,17 @@
 OPTIONS MPRINT MLOGIC SYMBOLGEN; /* SET DEBUGGING OPTIONS */
 
 *** M DRIVE ------------------------------------------------------ ***;
-LIBNAME MDRIVE '\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics';
+LIBNAME MDRIVE '\\rmc.local\dfsroot\Dept\Marketing\Analytics';
 
 *** WEB REPORT MAIN DIRECTORY LOCATION --------------------------- ***;
 %LET TCI_LOC = 
-"\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics\DigITAl\CredIT KArmA\INput LEAD AND App Files\CK LEADs 20180522.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\CK LEADS 20180522.xlsx";
 %LET APPFILE_LOC = 
-"\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics\DigITAl\CredIT KArmA\INput LEAD AND App Files\CredITKArmA523.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\CreditKarma523.xlsx";
 %LET CK_OUTPUT = 
-\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics\DigITAl\CredIT KArmA\OUTput Result Files;
+\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Output Result Files;
 %LET CK_SUMMARY = 
-\\rmc.locAl\dfsroot\Dept\MArketINg\AnAlytics\DigITAl\CredIT KArmA\CredIT KArmA Reports;
+\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Credit Karma Reports;
 
 *** LEADS                                                          ***;
 *** READ IN THE FILE WITH RECENT LEADS THAT ANN PROVIDED FROM TCI  ***;
@@ -218,7 +218,7 @@ PROC FREQ;
 	LIST;
 RUN;
 
-*** SEND THIS RESULTS FILE TO CREDIT KARMA EACH FRIDAY ----------- ***;
+*** SEND THIS RESULTS FILE TO Credit Karma EACH FRIDAY ----------- ***;
 PROC EXPORT 
 	DATA = LAST 
 	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_05232018.csv"

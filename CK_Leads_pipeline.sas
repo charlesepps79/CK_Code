@@ -1,4 +1,4 @@
-*** M MORGAN 5/3/18                                                ***;  
+﻿*** M MORGAN 5/3/18                                                ***;  
 *** THIS PROGRAM MATCHES ANN'S Credit Karma LEADS FILE WITH        ***;
 *** BRIAN'S APPS FILE (WHICH IS LIMITED TO JUST APPS FOR THE SSN'S ***;
 *** ANN PROVIDES HIM), THEN PRODUCES A FILE WITH THE Credit Karma  ***;
@@ -21,9 +21,9 @@ LIBNAME MDRIVE '\\rmc.local\dfsroot\Dept\Marketing\Analytics';
 
 *** WEB REPORT MAIN DIRECTORY LOCATION --------------------------- ***;
 %LET TCI_LOC = 
-"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\CK leads 20180614.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\CK leads 20180618.xlsx";
 %LET APPFILE_LOC = 
-"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\ck_app_data_20180615.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\ck_app_data_20180619.xlsx";
 %LET CK_OUTPUT = 
 \\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Output Result Files;
 %LET CK_SUMMARY = 
@@ -54,7 +54,8 @@ DATA LEADS;
 	*** THE VAR NAME IN THE LEADS FILE HAS SPACES IN IT. ALSO IT'S ***;
 	*** CHARACTER. CONVERTING TO A NUMERIC VAR NAMED SSN SO I CAN  ***;
 	*** MATCH TO APPS FILE --------------------------------------- ***;
-	SSN = 'ApplicAnt ssn'N * 1;  
+	SSN = put(input('ApplicAnt ssn'N,best12.),z9.);
+	/*SSN = 'ApplicAnt ssn'N * 1;*/  
 	LEADDATE = INT('APPLICATION DATE'N);
 	LEAD_SCORE = 'APPLICANT CREDIT SCORE'N;
 	PQ_DECISION = 'DECISION STATUS'N;
@@ -97,7 +98,7 @@ DATA APPS;
 	IF FUNDEDDATE = 'NULL' THEN FUNDEDDATE = "";
 /*	FUNDDATE = INPUT(STRIP(FUNDEDDATE), mmddyy10.);*/
 	FORMAT APPLICATIONENTERDATE yymmddd10.  FUNDEDDATE mmddyy10.;
-	RENAME SSNo = SSN;
+	SSN = put(input(SSNo,best12.),z9.);
 RUN;
 
 *** NEED TO DEDUPE APPS. I WANT TO KEEP THE MOST SUCCESSFUL APP,   ***;
@@ -222,7 +223,7 @@ RUN;
 *** SEND THIS RESULTS FILE TO Credit Karma EACH FRIDAY ----------- ***;
 PROC EXPORT 
 	DATA = LAST 
-	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_06152018.csv"
+	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_06192018.csv"
 	DBMS = CSV
 	REPLACE;
 RUN;
@@ -319,6 +320,6 @@ RUN;
 
 PROC EXPORT 
 	DATA = SUMMARY 
-	OUTFILE = "&CK_SUMMARY\CKRPT_06152018.xlsx" 
+	OUTFILE = "&CK_SUMMARY\CKRPT_06192018.xlsx" 
 	REPLACE ;
 RUN;

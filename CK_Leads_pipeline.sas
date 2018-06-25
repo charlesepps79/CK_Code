@@ -21,9 +21,9 @@ LIBNAME MDRIVE '\\rmc.local\dfsroot\Dept\Marketing\Analytics';
 
 *** WEB REPORT MAIN DIRECTORY LOCATION --------------------------- ***;
 %LET TCI_LOC = 
-"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\CK leads 20180618.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\CK leads 20180621.xlsx";
 %LET APPFILE_LOC = 
-"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\ck_app_data_20180619.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\ck_app_data_20180622.xlsx";
 %LET CK_OUTPUT = 
 \\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Output Result Files;
 %LET CK_SUMMARY = 
@@ -126,6 +126,7 @@ DATA MERGE1;
 	*** AS APPROVED HERE. TASKSTATUS OF PENDING APPROVAL --------- ***;
 	IF TASKSTATUS IN ('FUNDED', 'ELIGIBLE') THEN IS_APPROVE = 1; 
 	IF TASKSTATUS IN ('FUNDED') THEN IS_FUNDED = 1;
+	IF LoanNumber NOT IN ('None', '') THEN IS_FUNDED = 1;
 	AMT_APPROVED = MAX(SMALLAPPROVEDAMOUNT, LARGEAPPROVEDAMOUNT);
 	IF LARGETERM > 0 THEN TERM_APPROVED = LARGETERM;
 	ELSE TERM_APPROVED = SMALLTERM;
@@ -223,7 +224,7 @@ RUN;
 *** SEND THIS RESULTS FILE TO Credit Karma EACH FRIDAY ----------- ***;
 PROC EXPORT 
 	DATA = LAST 
-	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_06192018.csv"
+	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_06222018.csv"
 	DBMS = CSV
 	REPLACE;
 RUN;
@@ -320,6 +321,6 @@ RUN;
 
 PROC EXPORT 
 	DATA = SUMMARY 
-	OUTFILE = "&CK_SUMMARY\CKRPT_06192018.xlsx" 
+	OUTFILE = "&CK_SUMMARY\CKRPT_06222018.xlsx" 
 	REPLACE ;
 RUN;

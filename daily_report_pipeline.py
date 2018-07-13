@@ -62,7 +62,14 @@ def get_emails(result_bytes):
 con = auth(user,password,imap_url)
 con.select('INBOX/CK_Reports')
 
-result, data = con.fetch(b'10','(RFC822)')
+result, data = con.fetch(b'1','(RFC822)')
 raw = email.message_from_bytes(data[0][1])
 get_attachments(raw)
 
+# Clear mailbox and log out
+typ, data = con.search(None, 'ALL')
+for num in data[0].split():
+   con.store(num, '+FLAGS', '\\Deleted')
+con.expunge()
+con.close()
+con.logout()

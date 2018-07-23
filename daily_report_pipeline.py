@@ -5,19 +5,28 @@ Created on Wed Jul 11 09:46:17 2018
 @author: cepps
 """
 
+import numpy as np
+import pandas as pd
+import pyodbc
 import imaplib, email, os
 import configparser
+import datetime
+import glob
 
 config = configparser.ConfigParser()
 config.read(r"E:\cepps\Web_Report\Credit_Karma\etc\config.txt")
+user_config = config.get("configuration","user")
 password_config = config.get("configuration","password")
+imap_url_config = config.get("configuration","imap_url")
 
-user = 'cepps@regionalmanagement.com'
+user = user_config
 password = password_config
-imap_url = 'imap-mail.outlook.com'
+imap_url = imap_url_config
 
 #Where you want your attachments to be saved (ensure this directory exists) 
 attachment_dir = r'E:\cepps\Web_Report\Credit_Karma\attachments'
+
+date = (datetime.date.today() - datetime.timedelta(0)).strftime("%d-%b-%Y")
 
 # sets up the auth
 def auth(user,password,imap_url):
@@ -45,7 +54,7 @@ def get_attachments(msg):
             filePath = os.path.join(attachment_dir, fileName)
             with open(filePath,'wb') as f:
                 f.write(part.get_payload(decode=True))
-                
+
 #search for a particular email
 def search(key,value,con):
     result, data  = con.search(None,key,'"{}"'.format(value))
@@ -62,38 +71,35 @@ def get_emails(result_bytes):
 con = auth(user,password,imap_url)
 con.select('INBOX/CK_Reports')
 
-result, data = con.fetch(b'1','(RFC822)')
-raw = email.message_from_bytes(data[0][1])
-get_attachments(raw)
+result, data = con.search(None, '(SENTSINCE {0})'.format(date))
+for ids in data[0].split():
+    result, data = con.fetch(ids,'(RFC822)')
+    raw = email.message_from_bytes(data[0][1])
+    get_attachments(raw)
 
-# Clear mailbox and log out
-typ, data = con.search(None, 'ALL')
-for num in data[0].split():
-   con.store(num, '+FLAGS', '\\Deleted')
-con.expunge()
-con.close()
-con.logout()
-
-import glob
-
-list_of_files = glob.glob(r'E:\cepps\CK_Reports_Attachment_Test\*') # * means all if need specific format then *.csv
+# clear mailbox, close, and logout
+#typ, data = con.search(None, 'ALL')
+#
+#for num in data[0].split():
+#   con.store(num, '+FLAGS', '\\Deleted')
+#
+#con.expunge()
+#con.close()
+#con.logout()
+    
+# * means all if need specific format then *.csv
+list_of_files = glob.glob(r'E:\cepps\Web_Report\Credit_Karma\attachments\*') 
 latest_file = max(list_of_files, key=os.path.getctime)
 print (latest_file)
-
-import numpy as np
-import pandas as pd
-import pyodbc
 
 leads = pd.read_csv(latest_file, encoding="ISO-8859-1", error_bad_lines=False)
 leads.columns = leads.columns.str.strip().str.lower().str.replace(' ', '_') 
 leads['ssn'] = leads['applicant_ssn'].astype(str) 
-leads['ssn'] = leads['ssn'].apply(lambda x: '{0:0>9}'.format(x)) 
+leads['ssn'] = leads['ssn'].apply(lambda x: '{0:0>9}'.format(x))
 
 leads = leads[(leads.irmpname == 'CreditKarma')]
 
 leads_ssn = leads['ssn'].tolist()
-
-leads.describe(include = 'all')
 
 # Parameters
 server = 'server-DW'
@@ -228,7 +234,10 @@ select distinct
 """
 app_table = pd.io.sql.read_sql(sql, conn)
 
-app_table.head()
+app_table['Cifno'] = app_table['Cifno'].astype(int)
+app_table['Cifno'] = app_table['Cifno'].astype(str)
+
+ssn['Cifno'] = ssn['Cifno'].astype(str)
 
 ck_app_data = pd.merge(app_table, ssn[["SSNo", "Cifno"]], on = 'Cifno', how = 'inner')
 
@@ -253,11 +262,9 @@ ck_app_data['SmallTerm'] = ck_app_data['SmallTerm'].astype(float)
 ck_app_data['LargeTerm'] = ck_app_data['LargeTerm'].astype(float)
 ck_app_data['SSNo'] = ck_app_data['SSNo'].astype(int)
 
-from datetime import datetime
-
 #Use pandas to adress the issue
 
 os.chdir('E:\\cepps\\Web_Report\\Credit_Karma\\ck_app_data')
 datestring = datetime.strftime(datetime.now(), ' %Y_%m_%d')
-
-ck_app_data.to_excel(excel_writer=r"E:\cepps\Web_Report\Credit_Karma\ck_app_data\{0}".format('ck_app_data_' + datestring + '.xls'))#Fill in your path
+#Fill in your path
+ck_app_data.to_excel(excel_writer=r"E:\cepps\Web_Report\Credit_Karma\ck_app_data\{0}".format('ck_app_data_' + datestring + '.xls'))

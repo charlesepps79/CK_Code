@@ -21,9 +21,9 @@ LIBNAME MDRIVE '\\rmc.local\dfsroot\Dept\Marketing\Analytics';
 
 *** WEB REPORT MAIN DIRECTORY LOCATION --------------------------- ***;
 %LET TCI_LOC = 
-"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\CK leads 20180719.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\Daily CK Report-20180721T040008.xlsx";
 %LET APPFILE_LOC = 
-"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\ck_app_data_20180720.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\ck_app_data_20180727_TEST.xlsx";
 %LET CK_OUTPUT = 
 \\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Output Result Files;
 %LET CK_SUMMARY = 
@@ -50,7 +50,7 @@ PROC IMPORT
 RUN;
 
 DATA LEADS;   
-	SET TCI ;
+	SET TCI(where=(irmpname='CreditKarma')) ;
 	*** THE VAR NAME IN THE LEADS FILE HAS SPACES IN IT. ALSO IT'S ***;
 	*** CHARACTER. CONVERTING TO A NUMERIC VAR NAMED SSN SO I CAN  ***;
 	*** MATCH TO APPS FILE --------------------------------------- ***;
@@ -224,7 +224,7 @@ RUN;
 *** SEND THIS RESULTS FILE TO Credit Karma EACH FRIDAY ----------- ***;
 PROC EXPORT 
 	DATA = LAST 
-	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_07202018.csv"
+	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_07212018_TEST.csv"
 	DBMS = CSV
 	REPLACE;
 RUN;
@@ -321,6 +321,6 @@ RUN;
 
 PROC EXPORT 
 	DATA = SUMMARY 
-	OUTFILE = "&CK_SUMMARY\CKRPT_07202018.xlsx" 
+	OUTFILE = "&CK_SUMMARY\CKRPT_07212018_TEST.xlsx" 
 	REPLACE ;
 RUN;

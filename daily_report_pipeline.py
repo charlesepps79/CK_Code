@@ -1,46 +1,53 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jul 11 09:46:17 2018
-
-@author: cepps
-"""
-
-import numpy as np
-import pandas as pd
-import pyodbc
+import warnings
+warnings.filterwarnings('ignore')
+# Import imaplib, email, os, configparser, glob, numpy, pandas, pyodbc, shutil 
+# and os packages
 import imaplib, email, os
 import configparser
 import datetime
 import glob
+import numpy as np
+import pandas as pd
+import pyodbc
+import shutil
 
+# Check the mail
+# Read password configuration file
 config = configparser.ConfigParser()
 config.read(r"E:\cepps\Web_Report\Credit_Karma\etc\config.txt")
 user_config = config.get("configuration","user")
 password_config = config.get("configuration","password")
 imap_url_config = config.get("configuration","imap_url")
 
+# Store login info
 user = user_config
 password = password_config
 imap_url = imap_url_config
 
-#Where you want your attachments to be saved (ensure this directory exists) 
+# Load directory to save attachements
+# Where you want your attachments to be saved (ensure this directory exists) 
 attachment_dir = r'E:\cepps\Web_Report\Credit_Karma\attachments'
 
+# Create date variable formatted as DD-MM-YYYY
 date = (datetime.date.today() - datetime.timedelta(0)).strftime("%d-%b-%Y")
 
+# Create auth function to pass authorization info
 # sets up the auth
 def auth(user,password,imap_url):
     con = imaplib.IMAP4_SSL(imap_url)
     con.login(user,password)
     return con
 
+# Create get_body function to retrieve the specified email
 # extracts the body from the email
 def get_body(msg):
     if msg.is_multipart():
         return get_body(msg.get_payload(0))
     else:
         return msg.get_payload(None,True)
-    
+
+# Create get_attachments function to retrieve the attachments from the 
+# specified email
 # allows you to download attachments
 def get_attachments(msg):
     for part in msg.walk():
@@ -55,12 +62,15 @@ def get_attachments(msg):
             with open(filePath,'wb') as f:
                 f.write(part.get_payload(decode=True))
 
-#search for a particular email
+# Create search function in case program should search for specific email (this 
+# has no use in current iteration, but may be important later)
+# search for a particular email
 def search(key,value,con):
     result, data  = con.search(None,key,'"{}"'.format(value))
     return data
 
-#extracts emails from byte array
+# Create get_emails function to retrieve all specified emails
+# extracts emails from byte array
 def get_emails(result_bytes):
     msgs = []
     for num in result_bytes[0].split():
@@ -68,16 +78,21 @@ def get_emails(result_bytes):
         msgs.append(data)
     return msgs
 
+# Connect to email imap server and select the requisite mailbox
 con = auth(user,password,imap_url)
 con.select('INBOX/CK_Reports')
 
+# Fetch email from bay sent since the day the program runs. This should be the 
+# most recent email in the mailbox. Specify email format as RFC822. Store email 
+# as byte data. Extract attachments from raw email data and store in previously 
+# designated directory.
 result, data = con.search(None, '(SENTSINCE {0})'.format(date))
 for ids in data[0].split():
     result, data = con.fetch(ids,'(RFC822)')
     raw = email.message_from_bytes(data[0][1])
     get_attachments(raw)
 
-# clear mailbox, close, and logout
+# Clear mailbox, close connection, and log out.
 #typ, data = con.search(None, 'ALL')
 #
 #for num in data[0].split():
@@ -86,21 +101,73 @@ for ids in data[0].split():
 #con.expunge()
 #con.close()
 #con.logout()
-    
+
+# Use glob to find all attachments in a specified pathname. Retrieve the latest 
+# file and print the results
 # * means all if need specific format then *.csv
 list_of_files = glob.glob(r'E:\cepps\Web_Report\Credit_Karma\attachments\*') 
-latest_file = max(list_of_files, key=os.path.getctime)
-print (latest_file)
+latest_file_1 = max(list_of_files, key=os.path.getctime)
+latest_file_2 = min(list_of_files, key=os.path.getctime)
+print(latest_file_1)
+print(latest_file_2)
 
-leads = pd.read_csv(latest_file, encoding="ISO-8859-1", error_bad_lines=False)
+# Read in the data from the most recent Daily CK Report. Strip the column 
+# names, convert them to lower case, and replace spaces with underscores. 
+leads_1 = pd.read_csv(latest_file_1, encoding="ISO-8859-1", 
+                      error_bad_lines=False)
+leads_2 = pd.read_csv(latest_file_2, encoding="ISO-8859-1", 
+                      error_bad_lines=False)
+leads = leads_1.append(leads_2)
 leads.columns = leads.columns.str.strip().str.lower().str.replace(' ', '_') 
-leads['ssn'] = leads['applicant_ssn'].astype(str) 
-leads['ssn'] = leads['ssn'].apply(lambda x: '{0:0>9}'.format(x))
 
+# Filter leads data set for Credit Karma leads
 leads = leads[(leads.irmpname == 'CreditKarma')]
 
+# Store applicant_ssn in ssn as string type. Format ssn to 9 characters 
+# including leading zeros. Drop duplicates
+leads['ssn'] = leads['applicant_ssn'].astype(str) 
+leads['ssn'] = leads['ssn'].apply(lambda x: '{0:0>9}'.format(x)) 
+leads = leads.drop_duplicates(subset=['ssn'], keep="first")
+
+# Format string types
+leads['irpid'] = leads['irpid'].astype(str)
+leads['application_number'] = leads['application_number'].astype(str)
+leads['applicant_ssn'] = leads['applicant_ssn'].astype(str)
+leads['applicant_address_zip'] = leads['applicant_address_zip'].astype(str)
+leads['app._cell_phone'] = leads['app._cell_phone'].astype(str)
+leads['app._home_phone'] = leads['app._home_phone'].astype(str)
+leads['app._work_phone'] = leads['app._work_phone'].astype(str)
+leads['PQ_DECISION'] = leads['decision_status'].astype(str)
+leads['LEAD_TYPE'] = leads['loan_type'].astype(str)
+leads['LEAD_STATE'] = leads['applicant_address_state'].astype(str)
+leads['CK_TRACKING_ID'] = leads['sub_id'].astype(str)
+
+# Format date types
+leads['application_date'] = pd.to_datetime(leads['application_date'],
+     infer_datetime_format=True)
+leads['decision_date/time'] = pd.to_datetime(leads['decision_date/time'],
+     infer_datetime_format=True)
+leads['LEADDATE'] = pd.to_datetime(leads['application_date'],
+     infer_datetime_format=True)
+
+# Format integers
+leads['LEAD_SCORE'] = leads['applicant_credit_score'].fillna(0).astype(int)
+leads['AMT_APPLIED'] = leads['amt._fin.'].astype(int)
+
+# Create lead identifier
+leads['lead_app'] = 'lead'
+
+# Store the SSNs as a list
 leads_ssn = leads['ssn'].tolist()
 
+# Move attachments to archive folder
+source = 'E:\\cepps\\Web_Report\\Credit_Karma\\attachments\\'
+dest1 = 'E:\\cepps\\Web_Report\\Credit_Karma\\archive\\'
+files = os.listdir(source)
+for f in files:
+        shutil.move(source+f, dest1)
+
+# Connect to RMCDW. Select SSNo and Cifno for SSNs in the leads_ssn list
 # Parameters
 server = 'server-DW'
 db = 'RMCDW'
@@ -112,6 +179,8 @@ conn = pyodbc.connect('DRIVER={SQL Server};SERVER=' + server + ';DATABASE=' + db
 sql = 'SELECT SSNo, Cifno FROM vw_BORROWER t1 WHERE t1.SSNo in %s' % str(tuple(leads_ssn))
 ssn = pd.io.sql.read_sql(sql, conn)
 
+# Connect to NLS_Prod to retrieve application data. Select statement provided 
+# by Brian Killen
 # Parameters
 server = 'NLS-PROD-SQL03'
 db = 'NLS_Prod'
@@ -234,15 +303,19 @@ select distinct
 """
 app_table = pd.io.sql.read_sql(sql, conn)
 
+# Format Cifno as string
 app_table['Cifno'] = app_table['Cifno'].astype(int)
 app_table['Cifno'] = app_table['Cifno'].astype(str)
-
 ssn['Cifno'] = ssn['Cifno'].astype(str)
 
-ck_app_data = pd.merge(app_table, ssn[["SSNo", "Cifno"]], on = 'Cifno', how = 'inner')
+# Merge app_table and ssn
+ck_app_data = pd.merge(app_table, ssn[["SSNo", "Cifno"]], on = 'Cifno', 
+                       how = 'inner')
 
+# Drop duplicates
 ck_app_data = ck_app_data.drop_duplicates()
 
+# Format String types
 ck_app_data['firstname'] = ck_app_data['firstname'].astype(str)
 ck_app_data['lastname'] = ck_app_data['lastname'].astype(str)
 ck_app_data['task_refno'] = ck_app_data['task_refno'].astype(int)
@@ -252,8 +325,14 @@ ck_app_data['StatusCodes'] = ck_app_data['StatusCodes'].astype(str)
 ck_app_data['TaskStatus'] = ck_app_data['TaskStatus'].astype(str)
 ck_app_data['LoanStatus'] = ck_app_data['LoanStatus'].astype(str)
 ck_app_data['WasCreditReportPulled'] = ck_app_data['WasCreditReportPulled'].astype(str)
+ck_app_data['ssn'] = ck_app_data['SSNo'].astype(str)
+ck_app_data['ssn'] = ck_app_data['ssn'].apply(lambda x: '{0:0>9}'.format(x)) 
+
+# Format date types
 ck_app_data['FundedDate'] = pd.to_datetime(ck_app_data['FundedDate'])
 ck_app_data['ApplicationEnterDate'] = pd.to_datetime(ck_app_data['ApplicationEnterDate'])
+
+# Format numerics
 ck_app_data['InterestRate'] = ck_app_data['InterestRate'].astype(float)
 ck_app_data['FinalAPR'] = ck_app_data['FinalAPR'].astype(float)
 ck_app_data['SmallAPR'] = ck_app_data['SmallAPR'].astype(float)
@@ -261,10 +340,119 @@ ck_app_data['LargeAPR'] = ck_app_data['LargeAPR'].astype(float)
 ck_app_data['SmallTerm'] = ck_app_data['SmallTerm'].astype(float)
 ck_app_data['LargeTerm'] = ck_app_data['LargeTerm'].astype(float)
 ck_app_data['SSNo'] = ck_app_data['SSNo'].astype(int)
+ck_app_data['SSNo'] = ck_app_data['SSNo'].astype(int)
 
-#Use pandas to adress the issue
+# Create app table identifier
+ck_app_data['lead_app'] = 'app'
 
+# Add current date to ck_app_data file formatted as YYYY_MM_DD
+# Use pandas to adress the issue
+from datetime import datetime
 os.chdir('E:\\cepps\\Web_Report\\Credit_Karma\\ck_app_data')
 datestring = datetime.strftime(datetime.now(), ' %Y_%m_%d')
 #Fill in your path
 ck_app_data.to_excel(excel_writer=r"E:\cepps\Web_Report\Credit_Karma\ck_app_data\{0}".format('ck_app_data_' + datestring + '.xls'))
+
+# Drop duplicates again
+leads = leads.drop_duplicates(subset=['ssn'], keep="first")
+
+# Sort by application date, de-dup, keep latest applications
+ck_app_data = ck_app_data.sort_values(['ApplicationEnterDate'], 
+                                      ascending=[False])
+apps = ck_app_data.drop_duplicates(["ssn"], keep='first')
+
+# merge leads and apps
+merge_1 = pd.merge(leads, apps, on = 'ssn', how = 'left')
+
+# Format numerics, set amount approved
+merge_1['AmountRequested'] = merge_1['AmountRequested'].fillna(0).astype(int)
+merge_1["AMT_APPROVED"] = merge_1[["SmallApprovedAmount", 
+       "LargeApprovedAmount"]].max(axis=1)
+merge_1['AMT_APPROVED'] = merge_1['AMT_APPROVED'].fillna(0).astype(float)
+
+# Flag apps with app date older than lead date. Set AMT_APPROVED, 
+# TERM_APPROVED, RATE_APPROVED, AMOUNT_FUNDED, TERM_FUNDED and RATE_FUNDED, to 
+# 0 for apps older than lead date.
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 
+            'APP_BEFORE_LEAD'] = 1
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 
+            'AMT_APPROVED'] = 0
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 
+            'TERM_APPROVED'] = 0
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 
+            'RATE_APPROVED'] = 0
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 
+            'AMOUNT_FUNDED'] = 0
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 
+            'TERM_FUNDED'] = 0
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 
+            'RATE_FUNDED'] = 0
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 
+            'FundedDate'] = np.nan
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 
+            'ApplicationEnterDate'] = np.nan
+
+# Apply funnel. Order is very important
+merge_1['ISPQAPP'] = 1
+merge_1.loc[merge_1.ApplicationEnterDate.isnull(), 'IS_PREQUAL'] = 0
+merge_1.loc[(merge_1.PQ_DECISION == 'Auto Approved') & (merge_1.lead_app_x == 'lead'), 'IS_PREQUAL'] = 1
+merge_1.loc[merge_1.ApplicationEnterDate.notnull(), 'IS_APPL'] = 1
+merge_1.loc[merge_1.AmountRequested > 0, 'IS_APPL'] = 1
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 'IS_APPL'] = 0
+merge_1.loc[merge_1.ApplicationEnterDate.isnull(), 'IS_APPL'] = 0
+merge_1['IS_APPROVE'] = 0
+merge_1.loc[(merge_1.TaskStatus == 'FUNDED') | (merge_1.TaskStatus == 'ELIGIBLE'), 'IS_APPROVE'] = 1
+merge_1.loc[(merge_1.AMT_APPROVED > 0) & (merge_1.ReasonDeclined.isnull()), 'IS_APPROVE'] = 1
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 'IS_APPROVE'] = 0
+merge_1.loc[merge_1.ApplicationEnterDate.isnull(), 'IS_APPROVE'] = 0
+merge_1.loc[merge_1.IS_APPROVE == 1, 'IS_APPL'] = 1
+merge_1['IS_APPL'] = merge_1['IS_APPL'].fillna(0).astype(int)
+merge_1.loc[merge_1.IS_APPROVE == 1, 'IS_PREQUAL'] = 1
+merge_1.loc[merge_1.IS_APPL == 1, 'IS_PREQUAL'] = 1
+merge_1['IS_PREQUAL'] = merge_1['IS_PREQUAL'].fillna(0).astype(int)
+merge_1['IS_FUNDED'] = 0
+merge_1.loc[merge_1.TaskStatus == 'FUNDED', 'IS_FUNDED'] = 1
+merge_1['LoanNumber'] = merge_1['LoanNumber'].replace('None', np.NaN)
+merge_1.loc[merge_1.LoanNumber.notnull(), 'IS_FUNDED'] = 1
+merge_1.loc[merge_1.ApplicationEnterDate < merge_1.LEADDATE, 'IS_FUNDED'] = 0
+merge_1.loc[merge_1.ApplicationEnterDate.isnull(), 'IS_FUNDED'] = 0
+
+#Set term, rate, amount funded, and cost
+merge_1['TERM_FUNDED'] = 0
+merge_1['RATE_FUNDED'] = 0
+merge_1['APP_BEFORE_LEAD'] = 0
+merge_1['COST'] = 0
+merge_1.loc[merge_1.LargeTerm > 0, 'TERM_APPROVED'] = merge_1['LargeTerm']
+merge_1.loc[merge_1.LargeTerm <= 0, 'TERM_APPROVED'] = merge_1['SmallTerm']
+merge_1.loc[merge_1.LargeAPR > 0, 'RATE_APPROVED'] = merge_1['LargeAPR']
+merge_1.loc[merge_1.LargeAPR <= 0, 'RATE_APPROVED'] = merge_1['SmallAPR']
+merge_1['AMOUNT_FUNDED'] = merge_1['FinalLoanAmount']
+merge_1.loc[merge_1.AMOUNT_FUNDED <= 2500, 'COST'] = 125
+merge_1.loc[merge_1.AMOUNT_FUNDED == 0, 'COST'] = 0
+merge_1.loc[merge_1.AMOUNT_FUNDED > 2500, 'COST'] = 200
+merge_1.loc[merge_1.IS_FUNDED == 1, 'TERM_FUNDED'] = merge_1['FinalTerm']
+merge_1.loc[merge_1.IS_FUNDED == 1, 'RATE_FUNDED'] = merge_1['FinalAPR']
+
+# Sort and drop duplicates
+merge_1 = merge_1.sort_values(['APP_BEFORE_LEAD', 'IS_FUNDED', 'IS_APPROVE'], 
+                              ascending=[False, False, False])
+merge_2 = merge_1.drop_duplicates(["ssn"], keep='last')
+
+# Format final dataset
+last = merge_2[['CK_TRACKING_ID', 'LEADDATE', 'ApplicationEnterDate', 
+                'FundedDate', 'ISPQAPP', 'IS_PREQUAL', 'IS_APPL', 'IS_APPROVE', 
+                'IS_FUNDED', 'AMT_APPLIED', 'AMT_APPROVED', 'TERM_APPROVED', 
+                'RATE_APPROVED', 'AMOUNT_FUNDED', 'TERM_FUNDED', 
+                'RATE_FUNDED']]
+last = last.sort_values(['IS_FUNDED'], ascending = [False])
+
+# Show frenquency distribution of funnel
+last.groupby(["ISPQAPP", "IS_PREQUAL", "IS_APPL", "IS_APPROVE", 
+              "IS_FUNDED"]).size().reset_index(name="Funnel")
+
+# Output CK file with formatted date in filename
+datestring = datetime.strftime(datetime.now(), '%m%d%Y')
+last.to_csv(r"E:\cepps\Web_Report\Credit_Karma\output\{0}".format('CreditKarma_Regional_'+datestring+'.csv'), 
+                encoding='utf-8', 
+                float_format='%.2f', index=False)
+

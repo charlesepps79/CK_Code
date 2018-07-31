@@ -468,10 +468,10 @@ user = user_config
 password = password_config
 imap_url = imap_url_config
 smtp_url = smtp_url_config
-default_address = ['cepps@regionalmanagement.com'] 
+default_address = [user_config] 
 host = smtp_url 
-send_to = 'cepps@regionalmanagement.com'
-replyto = 'cepps@regionalmanagement.com' # unless you want a different reply-to
+send_to = user_config
+replyto = user_config # unless you want a different reply-to
 subject_text = 'TEST - Daily CK Report - TEST'
 # text with appropriate HTML tags
 body = """TEST - Daily CK Report - TEST""" 

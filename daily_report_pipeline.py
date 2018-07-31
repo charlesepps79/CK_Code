@@ -19,6 +19,8 @@ user_config = config.get("configuration","user")
 password_config = config.get("configuration","password")
 imap_url_config = config.get("configuration","imap_url")
 smtp_url_config = config.get("configuration","smtp_url")
+email_1_config = config.get("configuration","email_1")
+email_2_config = config.get("configuration","email_2")
 
 # Store login info
 user = user_config
@@ -128,7 +130,6 @@ leads = leads[(leads.irmpname == 'CreditKarma')]
 # including leading zeros. Drop duplicates
 leads['ssn'] = leads['applicant_ssn'].astype(str) 
 leads['ssn'] = leads['ssn'].apply(lambda x: '{0:0>9}'.format(x)) 
-leads = leads.drop_duplicates(subset=['ssn'], keep="first")
 
 # Format string types
 leads['irpid'] = leads['irpid'].astype(str)
@@ -157,6 +158,9 @@ leads['AMT_APPLIED'] = leads['amt._fin.'].astype(int)
 
 # Create lead identifier
 leads['lead_app'] = 'lead'
+
+leads = leads.sort_values(['LEADDATE', 'LEAD_SCORE'], ascending = [False, False])
+leads = leads.drop_duplicates(subset=['ssn'], keep="first")
 
 # Store the SSNs as a list
 leads_ssn = leads['ssn'].tolist()
@@ -355,6 +359,7 @@ datestring = datetime.strftime(datetime.now(), ' %Y_%m_%d')
 ck_app_data.to_excel(excel_writer=r"E:\cepps\Web_Report\Credit_Karma\ck_app_data\{0}".format('ck_app_data_' + datestring + '.xls'))
 
 # Drop duplicates again
+leads = leads.sort_values(['LEADDATE', 'LEAD_SCORE'], ascending = [False, False])
 leads = leads.drop_duplicates(subset=['ssn'], keep="first")
 
 # Sort by application date, de-dup, keep latest applications
@@ -475,6 +480,8 @@ replyto = user_config # unless you want a different reply-to
 subject_text = 'TEST - Daily CK Report - TEST'
 # text with appropriate HTML tags
 body = """TEST - Daily CK Report - TEST""" 
+email_1 = email_1_config
+email_2 = email_2_config
 
 import smtplib
 from email.mime.text import MIMEText
@@ -512,5 +519,5 @@ send_to: list, files= None):
 send_mail(send_from = user, 
           subject=subject_text,
           text=body,
-          send_to= None,
+          send_to= [email_1, email_2],
           files=[latest])

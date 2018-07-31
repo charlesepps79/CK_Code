@@ -18,6 +18,7 @@ config.read(r"E:\cepps\Web_Report\Credit_Karma\etc\config.txt")
 user_config = config.get("configuration","user")
 password_config = config.get("configuration","password")
 imap_url_config = config.get("configuration","imap_url")
+smtp_url_config = config.get("configuration","smtp_url")
 
 # Store login info
 user = user_config
@@ -456,3 +457,60 @@ last.to_csv(r"E:\cepps\Web_Report\Credit_Karma\output\{0}".format('CreditKarma_R
                 encoding='utf-8', 
                 float_format='%.2f', index=False)
 
+# * means all if need specific format then *.csv
+list_of_files = glob.glob(r'E:\cepps\Web_Report\Credit_Karma\output\*') 
+latest = max(list_of_files, key=os.path.getctime)
+print(latest)
+
+# specify port, if required, using a colon and port number following the 
+# hostname
+user = user_config
+password = password_config
+imap_url = imap_url_config
+smtp_url = smtp_url_config
+default_address = ['cepps@regionalmanagement.com'] 
+host = smtp_url 
+send_to = 'cepps@regionalmanagement.com'
+replyto = 'cepps@regionalmanagement.com' # unless you want a different reply-to
+subject_text = 'TEST - Daily CK Report - TEST'
+# text with appropriate HTML tags
+body = """TEST - Daily CK Report - TEST""" 
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from os.path import basename
+
+def send_mail(send_from: str, subject: str, text: str, 
+send_to: list, files= None):
+
+    send_to= default_address if not send_to else send_to
+
+    msg = MIMEMultipart()
+    msg['From'] = send_from
+    msg['To'] = ', '.join(send_to)  
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(text))
+
+    for f in files or []:
+        with open(f, "rb") as fil: 
+            ext = f.split('.')[-1:]
+            attachedfile = MIMEApplication(fil.read(), _subtype = ext)
+            attachedfile.add_header(
+                'content-disposition', 'attachment', filename=basename(f) )
+        msg.attach(attachedfile)
+
+
+    smtp = smtplib.SMTP(host=smtp_url, port= 587) 
+    smtp.starttls()
+    smtp.login(user,password)
+    smtp.sendmail(send_from, send_to, msg.as_string())
+    smtp.close()
+
+send_mail(send_from = user, 
+          subject=subject_text,
+          text=body,
+          send_to= None,
+          files=[latest])

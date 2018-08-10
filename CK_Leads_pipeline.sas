@@ -1,4 +1,4 @@
-﻿*** M MORGAN 5/3/18                                                ***;  
+*** M MORGAN 5/3/18                                                ***;  
 *** THIS PROGRAM MATCHES ANN'S Credit Karma LEADS FILE WITH        ***;
 *** BRIAN'S APPS FILE (WHICH IS LIMITED TO JUST APPS FOR THE SSN'S ***;
 *** ANN PROVIDES HIM), THEN PRODUCES A FILE WITH THE Credit Karma  ***;

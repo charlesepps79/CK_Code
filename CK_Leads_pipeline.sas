@@ -1,4 +1,4 @@
-*** M MORGAN 5/3/18                                                ***;  
+﻿*** M MORGAN 5/3/18                                                ***;  
 *** THIS PROGRAM MATCHES ANN'S Credit Karma LEADS FILE WITH        ***;
 *** BRIAN'S APPS FILE (WHICH IS LIMITED TO JUST APPS FOR THE SSN'S ***;
 *** ANN PROVIDES HIM), THEN PRODUCES A FILE WITH THE Credit Karma  ***;
@@ -21,9 +21,9 @@ LIBNAME MDRIVE '\\rmc.local\dfsroot\Dept\Marketing\Analytics';
 
 *** WEB REPORT MAIN DIRECTORY LOCATION --------------------------- ***;
 %LET TCI_LOC = 
-"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\CK leads 20180810.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\CK leads 20180813.xlsx";
 %LET APPFILE_LOC = 
-"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\ck_app_data_20180731_OLD.xlsx";
+"\\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Input Lead and App Files\ck_app_data_ 2018_08_14.xlsx";
 %LET CK_OUTPUT = 
 \\rmc.local\dfsroot\Dept\Marketing\Analytics\DigItal\Credit Karma\Output Result Files;
 %LET CK_SUMMARY = 
@@ -224,7 +224,7 @@ RUN;
 *** SEND THIS RESULTS FILE TO Credit Karma EACH FRIDAY ----------- ***;
 PROC EXPORT 
 	DATA = LAST 
-	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_08102018_OLD.csv"
+	OUTFILE =  "&CK_OUTPUT\CreditKarma_Regional_08142018_OLD.csv"
 	DBMS = CSV
 	REPLACE;
 RUN;
@@ -321,6 +321,6 @@ RUN;
 
 PROC EXPORT 
 	DATA = SUMMARY 
-	OUTFILE = "&CK_SUMMARY\CKRPT_08102018_OLD.xlsx" 
+	OUTFILE = "&CK_SUMMARY\CKRPT_08142018_OLD.xlsx" 
 	REPLACE ;
 RUN;
